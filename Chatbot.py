@@ -22,10 +22,28 @@ from langchain.prompts.chat import (
 from typing import List, Any
 from langchain.chains import GraphCypherQAChain
 from langchain.vectorstores.neo4j_vector import Neo4jVector
-
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 
 #my shit
 llm = None
+
+general_system_template = """ 
+You are a customer service agent that helps a customer with answering questions about a service.
+Use the following context to answer the question at the end.
+Make sure not to make any changes to the context if possible when prepare answers so as to provide accuate responses.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+----
+{summaries}
+----
+At the end of each answer you should contain metadata for relevant document in the form of (source, page).
+For example, if context has `metadata`:(source:'docu_url', page:1), you should display ('doc_url',  1).
+"""
+general_user_template = "Question:```{question}```"
+messages = [
+    SystemMessagePromptTemplate.from_template(general_system_template),
+    HumanMessagePromptTemplate.from_template(general_user_template),
+]
+qa_prompt = ChatPromptTemplate.from_messages(messages)
 
 
 def configure_qa_structure_rag_chain(llm, embeddings, embeddings_store_url, username, password):
@@ -154,6 +172,10 @@ if prompt := st.chat_input():
                 RETURN {source: d.url, page: chunks[0].page_idx+1, matched_chunk_id: id(answers[0])} AS metadata, 
                     reduce(text = "", x IN chunks | text + x.sentences + '.') AS text, maxScore AS score LIMIT 3;
     """)
+    qa_chain = load_qa_with_sources_chain(
+        llm,
+        chain_type="stuff",
+        prompt=qa_prompt)
     output = RetrievalQAWithSourcesChain(
         combine_documents_chain=qa_chain,
         retriever=store.as_retriever(search_kwargs={"k": 5}),
