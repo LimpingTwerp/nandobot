@@ -133,7 +133,7 @@ if prompt := st.chat_input():
         st.stop()
     llm = ChatOpenAI(temperature=0, model_name="gpt-4", streaming=True, openai_api_key=openai_api_key)
     store = Neo4jVector.from_existing_index(
-            embedding = OpenAIEmbeddings(),
+            embedding = OpenAIEmbeddings(openai_api_key=openai_api_key),
             url = NEO4J_URL,
             username = NEO4J_USER,
             password = NEO4J_PASSWORD,
