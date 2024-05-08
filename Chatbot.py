@@ -184,6 +184,6 @@ if prompt := st.chat_input():
     client = OpenAI(api_key=openai_api_key)
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
-    response = output_function({"question": st.session_state.messages[-1], "chat_history": []})["answer"]
+    response = output_function({"question": st.session_state.messages[-1]["content"], "chat_history": []})["answer"]
     st.session_state.messages.append({"role": "assistant", "content": response})
     st.chat_message("assistant").write(msg)
