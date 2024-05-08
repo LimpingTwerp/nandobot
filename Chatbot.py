@@ -176,7 +176,7 @@ if prompt := st.chat_input():
         llm,
         chain_type="stuff",
         prompt=qa_prompt)
-    output = RetrievalQAWithSourcesChain(
+    output_function = RetrievalQAWithSourcesChain(
         combine_documents_chain=qa_chain,
         retriever=store.as_retriever(search_kwargs={"k": 5}),
         reduce_k_below_max_tokens=False,
