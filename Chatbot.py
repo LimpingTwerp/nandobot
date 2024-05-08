@@ -8,10 +8,6 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 from langchain.graphs import Neo4jGraph
-from utils import (
-    extract_title_and_question,
-    create_vector_index,
-)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings import OllamaEmbeddings, SentenceTransformerEmbeddings
 from langchain.chat_models import ChatOpenAI, ChatOllama
@@ -24,7 +20,6 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 from typing import List, Any
-from utils import BaseLogger
 from langchain.chains import GraphCypherQAChain
 
 with st.sidebar:
