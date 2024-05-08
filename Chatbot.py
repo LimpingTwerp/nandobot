@@ -21,6 +21,7 @@ from langchain.prompts.chat import (
 )
 from typing import List, Any
 from langchain.chains import GraphCypherQAChain
+from langchain.vectorstores.neo4j_vector import Neo4jVector
 
 
 #my shit
@@ -105,6 +106,34 @@ def configure_qa_structure_rag_chain(llm, embeddings, embeddings_store_url, user
         max_tokens_limit=7000,      # gpt-4
     )
     return kg_qa
+
+NEO4J_URL = "neo4j+s://5d7f6789.databases.neo4j.io"
+NEO4J_USER = "neo4j"
+NEO4J_PASSWORD = "MbOWv0Ivgwd14w5n8cuB7H1dydBXYXVg6CNj_UVmsek"
+NEO4J_DATABASE = "neo4j"
+
+store = Neo4jVector.from_existing_index(
+        embedding = OpenAIEmbeddings(),
+        url = NEO4J_URL,
+        username = NEO4J_USER,
+        password = NEO4J_PASSWORD,
+        database='neo4j',  # neo4j by default
+        index_name="chunkVectorIndex",  # vector by default
+        node_label="Embedding",  # embedding node label
+        embedding_node_property="value",  # embedding value property
+        text_node_property="sentences",  # text by default
+        retrieval_query="""
+            WITH node AS answerEmb, score 
+            ORDER BY score DESC LIMIT 10
+            MATCH (answerEmb) <-[:HAS_EMBEDDING]- (answer) -[:HAS_PARENT*]-> (s:Section)
+            WITH s, answer, score
+            MATCH (d:Document) <-[*]- (s) <-[:HAS_PARENT*]- (chunk:Chunk)
+            WITH d, s, answer, chunk, score ORDER BY d.url_hash, s.title, chunk.block_idx ASC
+            // 3 - prepare results
+            WITH d, s, collect(answer) AS answers, collect(chunk) AS chunks, max(score) AS maxScore
+            RETURN {source: d.url, page: chunks[0].page_idx+1, matched_chunk_id: id(answers[0])} AS metadata, 
+                reduce(text = "", x IN chunks | text + x.sentences + '.') AS text, maxScore AS score LIMIT 3;
+""")
 
 with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
