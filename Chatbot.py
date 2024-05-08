@@ -154,10 +154,14 @@ if prompt := st.chat_input():
                 RETURN {source: d.url, page: chunks[0].page_idx+1, matched_chunk_id: id(answers[0])} AS metadata, 
                     reduce(text = "", x IN chunks | text + x.sentences + '.') AS text, maxScore AS score LIMIT 3;
     """)
+    output = RetrievalQAWithSourcesChain(
+        combine_documents_chain=qa_chain,
+        retriever=store.as_retriever(search_kwargs={"k": 5}),
+        reduce_k_below_max_tokens=False,
+        max_tokens_limit=10000)
     client = OpenAI(api_key=openai_api_key)
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
-    response = client.chat.completions.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
-    msg = response.choices[0].message.content
-    st.session_state.messages.append({"role": "assistant", "content": msg})
+    response = output_function({"question": st.session_state.messages[-1], "chat_history": []}, callbacks=[stream_handler])["answer"]
+    st.session_state.messages.append({"role": "assistant", "content": response})
     st.chat_message("assistant").write(msg)
