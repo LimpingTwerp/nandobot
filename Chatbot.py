@@ -8,7 +8,6 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 from langchain.graphs import Neo4jGraph
-from dotenv import load_dotenv
 from utils import (
     extract_title_and_question,
     create_vector_index,
